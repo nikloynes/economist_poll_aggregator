@@ -15,6 +15,7 @@ The goal of this code is to provide a convenient and easy-to-use interface for E
 - Clone this repository 
 - create a virtual environment, activate the environment (see above)
 - Install the required packages by running `pip install -r requirements.txt` in your terminal
+- set up your `.env` file (see above)
 
 3. Running the code
 -  `get_polls_aggregate.py` runs without needing any arguments. You can run it with default arguments simply by typing `python get_polls_aggregate.py` - it will 
