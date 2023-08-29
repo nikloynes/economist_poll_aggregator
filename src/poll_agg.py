@@ -141,12 +141,12 @@ def aggregate_polls(polls_df: pd.DataFrame,
                     from_date: dt.datetime | str | None = None,
                     to_date: dt.datetime | str | None = None) -> pd.DataFrame:
     '''
-    this function takes a dataframe of polls (obtained from `get_polls`)
+    this function takes a dataframe of polls (obtained from `get_polls()`)
     and aggregates (averages) them by candidate column
     and returns a trends_df dataframe.
 
-    NOTE: in its current form, this function will be completely
-    agnostic to which pollsters originate which polls
+    NOTE: in its current form, this function is
+    agnostic to which pollsters produced which polls.
 
     args:
         :polls_df (pd.DataFrame): dataframe of polls
