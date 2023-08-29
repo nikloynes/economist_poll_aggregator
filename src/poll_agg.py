@@ -14,7 +14,9 @@
 # USAGE: import poll_agg as pa
 
 # NL, 22/08/23
-# NL, 29/08/23 -- refining aggregation function with interpolation
+# NL, 28/08/23 -- refining aggregation function with interpolation
+# NL, 29/08/23 -- simplification: removing dotenv, removing runtime
+#                 type checking in favour of mypy
 
 
 ############
@@ -23,7 +25,6 @@
 import os
 import sys
 import logging
-from dotenv import load_dotenv
 from typing import Union, Literal
 
 import pandas as pd
@@ -36,28 +37,19 @@ from . import utils as ut
 ###########
 # EXCEPTIONS
 ###########
-class EnvError(Exception):
-    pass
 
 ###########
 # INIT
 ###########
-is_dotenv = load_dotenv()
-if not is_dotenv:
-    logging.info('dotenv not loaded')
-    raise EnvError('dotenv not loaded. please check .env file is in root directory.')
-else:
-    logging.info('dotenv loaded')    
-
 # set up logger
 logger = logging.getLogger('poll_agg')
 
 ###########
 # PATHS & CONSTANTS
 ###########
-POLLS_URL = ut.load_env_var('POLLS_URL') 
-POLLS_OUTFILE = ut.load_env_var('POLLS_OUTFILE')
-TRENDS_OUTFILE = ut.load_env_var('TRENDS_OUTFILE')
+POLLS_URL = 'https://cdn-dev.economistdatateam.com/jobs/pds/code-test/index.html'
+POLLS_OUTFILE = 'polls.csv'
+TRENDS_OUTFILE = 'trends.csv'
 
 # columns in every polls_df
 BASE_COLS = ['date', 'pollster', 'n']
@@ -77,11 +69,14 @@ def get_polls(url: str = POLLS_URL,
     the assignment URL, but should work for other
     tabular data.
 
+    the scraping method used here is pandas.read_html rather
+    than a bespoke library. this depends on the `lxml` library.
+
     args:
         :url (str): url to retrieve polling data from
-        :from_date (dt.datetime or str): earliest date to retrieve data from, optional
-        :to_date (dt.datetime or str): latest date to retrieve data from, optional
-
+        :from_date (dt.datetime, str, None): earliest date to retrieve data from, optional
+        :to_date (dt.datetime, str, None): latest date to retrieve data from, optional
+å
     returns:
         polls (pd.DataFrame): polling data
     '''
@@ -91,17 +86,18 @@ def get_polls(url: str = POLLS_URL,
     polls_df = polls_df.rename(columns={'Date': 'date',
                                         'Pollster' : 'pollster',
                                         'Sample' : 'n'})
-
+    
     # date col to datetime
     polls_df['date'] = pd.to_datetime(polls_df['date'], format='%m/%d/%y')
+    logging.debug(f'converted date column to datetime')
 
     # remove non-numeric characters from sample size, convert to int
     polls_df['n'] = polls_df['n'].apply(lambda x: ''.join(filter(str.isdigit, x)))
     polls_df['n'] = pd.to_numeric(polls_df['n'])
+    logging.debug(f'converted sample size column - "n" - to int')
 
     # candidate cols to float
     candidate_cols = [col for col in polls_df.columns if col not in BASE_COLS]
-    logging.info(f'candidates found: {candidate_cols}')
 
     for col in candidate_cols:
         polls_df[col] = polls_df[col].apply(ut.remove_non_numeric)
@@ -112,21 +108,26 @@ def get_polls(url: str = POLLS_URL,
 
         # /100 (to decimals)
         polls_df[col] = polls_df[col] / 100
+    logging.debug(f'converted candidate perc columns to float')
 
     # filter by date
     if from_date:
         if not isinstance(from_date, dt.datetime):
             from_date = date_parser.parse(from_date)
         polls_df = polls_df[polls_df['date'] >= from_date]
-        logging.info(f'filtered polls by from_date: {from_date}')
+        logging.debug(f'filtered polls by from_date: {from_date}')
 
     if to_date:
         if not isinstance(to_date, dt.datetime):
             to_date = date_parser.parse(to_date)
         polls_df = polls_df[polls_df['date'] <= to_date]
-        logging.info(f'filtered polls by to_date: {to_date}')
-    
-    logging.info(f'polls shape: {polls_df.shape}')
+        logging.debug(f'filtered polls by to_date: {to_date}')
+
+    logging.info(f'n polls retrieved: {len(polls_df)}')
+    logging.info(f'n unique pollsters: {len(polls_df["pollster"].unique())}')
+    logging.info(f'candidates found: {candidate_cols}')
+    logging.info(f'earliest date with polls: {polls_df["date"].min()}')
+    logging.info(f'latest date with polls: {polls_df["date"].max()}')
 
     return polls_df
 

@@ -9,6 +9,7 @@
 # USAGE: import utils as ut
 
 # NL, 22/08/23
+# NL, 29/08/23 -- deprecating dotenv-related funcs
 
 ############
 # IMPORTS 
@@ -34,6 +35,9 @@ logger = logging.getLogger('utils')
 ############
 def load_env_var(env_var: str):
     '''
+    # DEPRECATED 
+    # --> REMOVED dotenv logic from codebase
+
     loads an environment variable (from dotenv or regular env)
     and throws an error if it isn't found
 
@@ -70,6 +74,9 @@ def remove_percentage_symbol(value):
 
 def remove_non_numeric(value):
     '''
+    # DEPRECATED 
+    # --> used pandas built-in instead
+
     removes non-numeric characters from a string,
     but retaining '.' characters. 
 
