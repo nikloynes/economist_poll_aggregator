@@ -60,6 +60,40 @@ TRENDS_DROP = ['pollster', 'n']
 ###########
 # FUNCTIONS
 ###########
+# helpers
+def filter_by_date(df: pd.DataFrame,
+                   from_date: dt.datetime | str | None = None,
+                   to_date: dt.datetime | str | None = None) -> (pd.DataFrame):
+    '''
+    helper function that allows us to subset a dataframe
+    by a from_date and to_date. we re-use this quite a bit
+    across this module, so makes sense to have it as its own
+    function.
+
+    args:
+        :df (pd.DataFrame): dataframe to subset
+        :from_date (dt.datetime, str, None): earliest date to retrieve data from, optional
+        :to_date (dt.datetime, str, None): latest date to retrieve data from, optional
+
+    returns:
+        :df (pd.DataFrame): filtered dataframe
+    '''
+    if from_date:
+        if not isinstance(from_date, dt.datetime):
+            from_date = date_parser.parse(from_date)
+        df = df[df['date'] >= from_date]
+        logging.debug(f'filtered polls by from_date: {from_date}')
+
+    if to_date:
+        if not isinstance(to_date, dt.datetime):
+            to_date = date_parser.parse(to_date)
+        df = df[df['date'] <= to_date]
+        logging.debug(f'filtered polls by to_date: {to_date}')
+    
+    return df
+
+
+# the protein
 def get_polls(url: str = POLLS_URL,
               from_date: dt.datetime | str | None = None,
               to_date: dt.datetime | str | None = None) -> pd.DataFrame:
@@ -76,7 +110,7 @@ def get_polls(url: str = POLLS_URL,
         :url (str): url to retrieve polling data from
         :from_date (dt.datetime, str, None): earliest date to retrieve data from, optional
         :to_date (dt.datetime, str, None): latest date to retrieve data from, optional
-å
+
     returns:
         polls (pd.DataFrame): polling data
     '''
@@ -111,17 +145,7 @@ def get_polls(url: str = POLLS_URL,
     logging.debug(f'converted candidate perc columns to float')
 
     # filter by date
-    if from_date:
-        if not isinstance(from_date, dt.datetime):
-            from_date = date_parser.parse(from_date)
-        polls_df = polls_df[polls_df['date'] >= from_date]
-        logging.debug(f'filtered polls by from_date: {from_date}')
-
-    if to_date:
-        if not isinstance(to_date, dt.datetime):
-            to_date = date_parser.parse(to_date)
-        polls_df = polls_df[polls_df['date'] <= to_date]
-        logging.debug(f'filtered polls by to_date: {to_date}')
+    polls_df= filter_by_date(polls_df, from_date, to_date)
 
     logging.info(f'n polls retrieved: {len(polls_df)}')
     logging.info(f'n unique pollsters: {len(polls_df["pollster"].unique())}')
@@ -137,6 +161,7 @@ def aggregate_polls(polls_df: pd.DataFrame,
                     agg_type: Literal['mean', 'median'] = 'mean',
                     increment_days: int = 1,
                     lead_time: int = 7,
+                    lead_override: bool = True,
                     interpolation: Literal['if_missing', 'always', 'never'] = 'if_missing',
                     from_date: dt.datetime | str | None = None,
                     to_date: dt.datetime | str | None = None) -> pd.DataFrame:
@@ -158,6 +183,7 @@ def aggregate_polls(polls_df: pd.DataFrame,
             defaults to 1 (daily)
         :lead_time (int): number of days before target day to include in an average
             when aggregating polls
+        :lead_override (bool): whether to expand lead_time if there is no data
         :interpolation (str): mechanism to use for interpolating averages, 
             either 'if_missing', 'always' or 'never'. 'if_missing' 
             will include data from `lead_time` previous days only if 
@@ -171,13 +197,13 @@ def aggregate_polls(polls_df: pd.DataFrame,
     returns:
         trends_df (pd.DataFrame): dataframe of aggregated polls
     '''
-    # error handling/ type checking
-    if not isinstance(polls_df, pd.DataFrame):
-        raise TypeError('polls_df must be a pandas DataFrame')
-    
-    if not isinstance(candidates, list) and not isinstance(candidates, str):
-        raise TypeError('candidates must be a list or str')
-    
+    # some minor runtime type checking to prevent 
+    # unexpected behaviour
+    if interpolation not in ['if_missing', 'always', 'never']:
+        raise ValueError('interpolation must be one of "if_missing", "always" or "never"')
+    if agg_type not in ['mean', 'median']:
+        raise ValueError('agg_type must be one of "mean" or "median"')
+
     # ensure we have the right columns in polls_df
     if candidates!='all':
         if isinstance(candidates, str):
@@ -191,90 +217,104 @@ def aggregate_polls(polls_df: pd.DataFrame,
                 raise ValueError(f'candidate {candidate} not found in polls_df columns')
         
         polls_df = polls_df[BASE_COLS + candidates]
-    logging.info(f'aggregating polls for candidates: {candidates}')
-
-    if agg_type not in ['mean', 'median']:
-        raise ValueError('agg_type must be either "mean" or "median"')
-    
-    if not isinstance(increment_days, int):
-        raise TypeError('increment_days must be an int')
-    
-    if not isinstance(lead_time, int):
-        raise TypeError('min_lead_time must be an int')
-    
-    if interpolation not in ['if_missing', 'always', 'never']:
-        raise ValueError('lead_mechanism must be either "if_missing", "always" or "never"')
-    
+    else:
+        # we will explicitly name our candidates for later use
+        candidates = [col for col in polls_df.columns if col not in BASE_COLS]
+        
     # filter polls_df by date if required
-    if from_date:
-        if not isinstance(from_date, dt.datetime):
-            from_date = date_parser.parse(from_date)
-        polls_df = polls_df[polls_df['date'] >= from_date]
-        logging.info(f'filtered polls by from_date: {from_date}')
-
-    if to_date:
-        if not isinstance(to_date, dt.datetime):
-            to_date = date_parser.parse(to_date)
-        polls_df = polls_df[polls_df['date'] <= to_date]
-        logging.info(f'filtered polls by to_date: {to_date}')
+    polls_df = filter_by_date(polls_df, from_date, to_date)
 
     # remove redundant columns
     polls_df = polls_df.drop(columns=TRENDS_DROP)
 
-    # log some info about the supplied data, our aggregation mechanism,
-    # and also instantiate some vars
-    logging.info(f'n polls retrieved: {len(polls_df)}')
-
-    start_date = polls_df['date'].min()
-    end_date = polls_df['date'].max()
-    logging.info(f'earliest date with polls: {start_date}')
-    logging.info(f'latest date with polls: {end_date}')
-    
-    # create a list of all dates between start and end date
+    # create a list of all dates between from_date & to_date
     # with increments of increment_days
-    dates = [start_date + dt.timedelta(days=x) for x in range(0, (end_date-start_date).days, increment_days)] 
+    if from_date is None:
+        from_date = polls_df['date'].min()
+    if to_date is None:
+        to_date = polls_df['date'].max()
 
-    logging.info(f'polling averages produced in increments of {increment_days} days')
+    dates = [from_date + dt.timedelta(days=x) for x in range(0, (to_date-from_date).days, increment_days)] 
 
+    # some logging of core params of this run
+    logging.info(f'n polls retrieved: {len(polls_df)}')
+    logging.info(f'start date: {from_date}')
+    logging.info(f'end date: {to_date}')
+    logging.info(f'producing averages in increments of {increment_days} days')
     logging.info(f'interpolation for days with missing data: {interpolation}')
     logging.info(f'lead time: {lead_time} days to.\
                   this is preceding days to include in aggregation per increment.')
-
     logging.info(f'aggregation method: {agg_type}.')
-
     logging.info(f'aggregating data for candidates: {candidates}')
 
     # start by aggregating data
     trends_df = polls_df.groupby('date').agg(agg_type).reset_index()
     
     if interpolation=='never':
-        logging.info(f'not interpolating data. finished aggregating polls.')
+        logging.debug(f'not interpolating data. finished aggregating polls.')
         out_df = trends_df
 
-    elif interpolation=='if_missing':
-        logging.info(f'interpolating data for dates with missing poll data...')
+    else:
         out_df = pd.DataFrame()
         for date in dates:
             if date in trends_df['date']:
-                # copy data from trends_df to out_df
-                logging.info(f'found data for {date}. retaining.')
-                out_df = out_df.append(trends_df[trends_df['date']==date])
-            else:
-                logging.info(f'no data for {date}. interpolating...')
-                # QUESTION HERE IS IF WE WANT TO CHECK IN POLLS DF OR IN TRENDS. 
-                # IT DOESNT REALLY MATTER BUT WE MIGHT BE slightly more granula if checking
-                # polls.
-                subset_df = polls_df[polls_df['date']>=date-dt.timedelta(days=max_lead_time)]
-                subset_df = subset_df[subset_df['date']<=date-dt.timedelta(days=min_lead_time)]
-                # produce means for each column that isn't `date`
-                subset_df = subset_df.groupby('date').agg(agg_type).reset_index()
+                if interpolation=='if_missing':
+                    # copy data from trends_df to out_df
+                    logging.debug(f'found data for {date}. retaining.')
+                    out_df = pd.concat([out_df, trends_df[trends_df['date']==date]], ignore_index=True)
+                    use_lead_time = False
 
-    elif interpolation=='always':
-        # iterate over `dates`.
-        # if data exist in trends_df for that date, copy to out_df
-        # if data do not exist in trends_df, combine days from 
-        for date in dates:
-            pass
+                elif interpolation=='always':
+                    use_lead_time = True
 
+            elif date not in trends_df['date']: # being explicit here to avoid confusion
+                use_lead_time = True
+
+            if use_lead_time:
+                logging.debug(f'interpolating data for date {date}')
+
+                subset_df = polls_df[polls_df['date']<=date]
+                subset_df = subset_df[subset_df['date']>=(date-dt.timedelta(days=lead_time))]
+
+                # potential problem - if we have no data, 
+                # we need to expand our lead_time
+                if len(subset_df)==0:
+                    if lead_override:
+                        logging.debug(f'no data for {date} minus lead time. \
+                                      `lead_override` allowed, so expanding lead time...')
+                        found_data = False
+                        new_lead_time = lead_time
+                        while not found_data:
+                            new_lead_time += 1
+                            logging.debug(f'new lead time: {new_lead_time}')
+
+                            subset_df = polls_df[polls_df['date']<=date]
+                            subset_df = subset_df[subset_df['date']>=(date-dt.timedelta(days=new_lead_time))]
+                            if len(subset_df)>0:
+                                found_data = True
+                                logging.debug(f'found data for \
+                                              {(date-dt.timedelta(days=5)).strftime(format="%Y-%m-%d")}\
+                                               minus new lead time.')
+                    else:
+                        logging.debug(f'no data for {date}.\
+                                      `lead_override` not allowed, so adding NaNs...')
+                        # add NaNs for all candidates
+                        newline = {'date': date, **{candidate: np.nan for candidate in candidates}}
+                        out_df = pd.concat([out_df, pd.DataFrame(newline, index=[0])], ignore_index=True)
+                        continue
+                
+                # produce aggregations for each column that isn't `date`
+                if agg_type=='mean':
+                    newline_df = subset_df.mean().to_frame().T
+                elif agg_type=='median':
+                    newline_df = subset_df.median().to_frame().T
+                newline_df['date'] = date
+
+                # append to out_df
+                out_df = pd.concat([out_df, newline_df], ignore_index=True)
+
+    # sort by date
+    out_df = out_df.sort_values(by='date').reset_index(drop=True)
+    logging.info(f'produced aggregate polls for {len(out_df)} days.')
 
     return out_df
