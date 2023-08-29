@@ -14,6 +14,8 @@
 # USAGE: import poll_agg as pa
 
 # NL, 22/08/23
+# NL, 29/08/23 -- refining aggregation function with interpolation
+
 
 ############
 # IMPORTS 
@@ -67,8 +69,8 @@ TRENDS_DROP = ['pollster', 'n']
 # FUNCTIONS
 ###########
 def get_polls(url: str = POLLS_URL,
-              from_date: dt.datetime | str = None,
-              to_date: dt.datetime | str = None) -> pd.DataFrame:
+              from_date: dt.datetime | str | None = None,
+              to_date: dt.datetime | str | None = None) -> pd.DataFrame:
     '''
     retrieves polling data from desired URL.
     is set up to work well for the polling data on 
@@ -133,11 +135,10 @@ def aggregate_polls(polls_df: pd.DataFrame,
                     candidates: list[str] | str = 'all',
                     agg_type: Literal['mean', 'median'] = 'mean',
                     increment_days: int = 1,
-                    min_lead_time: int = 0,
-                    max_lead_time: int = 7,
+                    lead_time: int = 7,
                     interpolation: Literal['if_missing', 'always', 'never'] = 'if_missing',
-                    from_date: dt.datetime | str = None,
-                    to_date: dt.datetime | str = None) -> pd.DataFrame:
+                    from_date: dt.datetime | str | None = None,
+                    to_date: dt.datetime | str | None = None) -> pd.DataFrame:
     '''
     this function takes a dataframe of polls (obtained from `get_polls`)
     and aggregates (averages) them by candidate column
@@ -156,7 +157,7 @@ def aggregate_polls(polls_df: pd.DataFrame,
             defaults to 1 (daily)
         :lead_time (int): number of days before target day to include in an average
             when aggregating polls
-        :interpolation (str): mechanism to use when leading polls, 
+        :interpolation (str): mechanism to use for interpolating averages, 
             either 'if_missing', 'always' or 'never'. 'if_missing' 
             will include data from `lead_time` previous days only if 
             there is no data for a given day. `always` will always include
@@ -197,11 +198,8 @@ def aggregate_polls(polls_df: pd.DataFrame,
     if not isinstance(increment_days, int):
         raise TypeError('increment_days must be an int')
     
-    if not isinstance(min_lead_time, int):
+    if not isinstance(lead_time, int):
         raise TypeError('min_lead_time must be an int')
-    
-    if not isinstance(max_lead_time, int):
-        raise TypeError('max_lead_time must be an int')
     
     if interpolation not in ['if_missing', 'always', 'never']:
         raise ValueError('lead_mechanism must be either "if_missing", "always" or "never"')
@@ -238,7 +236,8 @@ def aggregate_polls(polls_df: pd.DataFrame,
     logging.info(f'polling averages produced in increments of {increment_days} days')
 
     logging.info(f'interpolation for days with missing data: {interpolation}')
-    logging.info(f'lead time: {min_lead_time} days to {max_lead_time} days. this is days to include in aggregation per increment.')
+    logging.info(f'lead time: {lead_time} days to.\
+                  this is preceding days to include in aggregation per increment.')
 
     logging.info(f'aggregation method: {agg_type}.')
 
