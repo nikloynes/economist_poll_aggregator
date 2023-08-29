@@ -93,6 +93,50 @@ def filter_by_date(df: pd.DataFrame,
     return df
 
 
+def parse_from_to_date(df: pd.DataFrame,
+                       from_date: dt.datetime | str | None = None,
+                       to_date: dt.datetime | str | None = None) -> (dt.datetime, dt.datetime):
+    '''
+    supplying from_date and to_date as args is optional. 
+    if they aren't supplied, we take the earliest and latest
+    dates from polls_df. this function produces the 
+    objects we need in the correct format regardless of the
+    configuration. 
+
+    args:
+        :df (pd.DataFrame): df to use if from_date and to_date aren't supplied
+        :from_date (dt.datetime, str, None): earliest date to retrieve data from, optional
+        :to_date (dt.datetime, str, None): latest date to retrieve data from, optional
+
+    returns:
+        :from_date (dt.datetime): earliest date to retrieve data from
+        :to_date (dt.datetime): latest date to retrieve data from
+    '''
+    out = ()
+    for i, date_obj in enumerate([from_date, to_date]):
+        if date_obj is None:
+            if i==0:
+                tmp_date = df['date'].min()
+            elif i==1:
+                tmp_date = df['date'].max()
+        elif isinstance(date_obj, str):
+            tmp_date = date_parser.parse(date_obj)
+        elif isinstance(from_date, dt.datetime):
+            tmp_date = from_date
+        out += (tmp_date,)
+
+    return out
+
+
+# def create_date_range(df: pd.DataFrame,
+#                       from_date: dt.datetime | str | None = None,
+#                       to_date: dt.datetime | str | None = None) -> list[dt.datetime]:
+#     '''
+#     helper function that creates a list of all dates
+    
+#     '''
+
+
 # the protein
 def get_polls(url: str = POLLS_URL,
               from_date: dt.datetime | str | None = None,
@@ -145,7 +189,7 @@ def get_polls(url: str = POLLS_URL,
     logging.debug(f'converted candidate perc columns to float')
 
     # filter by date
-    polls_df= filter_by_date(polls_df, from_date, to_date)
+    polls_df = filter_by_date(polls_df, from_date, to_date)
 
     logging.info(f'n polls retrieved: {len(polls_df)}')
     logging.info(f'n unique pollsters: {len(polls_df["pollster"].unique())}')
@@ -220,20 +264,16 @@ def aggregate_polls(polls_df: pd.DataFrame,
     else:
         # we will explicitly name our candidates for later use
         candidates = [col for col in polls_df.columns if col not in BASE_COLS]
-        
-    # filter polls_df by date if required
-    polls_df = filter_by_date(polls_df, from_date, to_date)
-
+    
     # remove redundant columns
     polls_df = polls_df.drop(columns=TRENDS_DROP)
 
+    # filter polls_df by date if required
+    polls_df = filter_by_date(polls_df, from_date, to_date)
+    from_date, to_date = parse_from_to_date(polls_df, from_date, to_date)
+
     # create a list of all dates between from_date & to_date
     # with increments of increment_days
-    if from_date is None:
-        from_date = polls_df['date'].min()
-    if to_date is None:
-        to_date = polls_df['date'].max()
-
     dates = [from_date + dt.timedelta(days=x) for x in range(0, (to_date-from_date).days, increment_days)] 
 
     # some logging of core params of this run
