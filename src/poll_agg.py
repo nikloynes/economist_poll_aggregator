@@ -17,6 +17,8 @@
 # NL, 28/08/23 -- refining aggregation function with interpolation
 # NL, 29/08/23 -- simplification: removing dotenv, removing runtime
 #                 type checking in favour of mypy
+# NL, 01/09/23 -- ironing out quirks with out-of-bounds date 
+#                 subsetting / interpolation
 
 
 ############
@@ -42,7 +44,7 @@ from . import utils as ut
 # INIT
 ###########
 # set up logger
-logger = logging.getLogger('poll_agg')
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 ###########
 # PATHS & CONSTANTS
@@ -227,14 +229,14 @@ def aggregate_polls(polls_df: pd.DataFrame,
             defaults to 1 (daily)
         :lead_time (int): number of days before target day to include in an average
             when aggregating polls
-        :lead_override (bool): whether to expand lead_time if there is no data
+        :lead_override (bool): whether to increase lead_time if there is no data
         :interpolation (str): mechanism to use for interpolating averages, 
             either 'if_missing', 'always' or 'never'. 'if_missing' 
             will include data from `lead_time` previous days only if 
             there is no data for a given day. `always` will always include
             data from `lead_time` previous days. `never` will never include
-            data from `lead_time` previous days, and return NaNs for days with
-            missing data.
+            data from `lead_time` previous days, and not return any data for days
+            without polls.
         :from_date (dt.datetime or str): earliest date to aggregate polls from, optional
         :to_date (dt.datetime or str): latest date to aggregate polls from, optional
 
@@ -281,14 +283,15 @@ def aggregate_polls(polls_df: pd.DataFrame,
     logging.info(f'start date: {from_date}')
     logging.info(f'end date: {to_date}')
     logging.info(f'producing averages in increments of {increment_days} days')
-    logging.info(f'interpolation for days with missing data: {interpolation}')
-    logging.info(f'lead time: {lead_time} days to.\
-                  this is preceding days to include in aggregation per increment.')
+    logging.info(f'interpolation rule for days with missing data: {interpolation}')
+    logging.info(f'lead time: {lead_time} days.')
     logging.info(f'aggregation method: {agg_type}.')
     logging.info(f'aggregating data for candidates: {candidates}')
 
     # start by aggregating data
     trends_df = polls_df.groupby('date').agg(agg_type).reset_index()
+    # potentially:
+    # polls_EDIT_df.resample("1d").mean().rolling(window=2, min_periods=1).mean()
     
     if interpolation=='never':
         logging.debug(f'not interpolating data. finished aggregating polls.')
@@ -297,7 +300,8 @@ def aggregate_polls(polls_df: pd.DataFrame,
     else:
         out_df = pd.DataFrame()
         for date in dates:
-            if date in trends_df['date']:
+            logging.debug(f'processing date: {date}')
+            if date in trends_df['date'].values:
                 if interpolation=='if_missing':
                     # copy data from trends_df to out_df
                     logging.debug(f'found data for {date}. retaining.')
@@ -309,6 +313,7 @@ def aggregate_polls(polls_df: pd.DataFrame,
 
             elif date not in trends_df['date']: # being explicit here to avoid confusion
                 use_lead_time = True
+                logging.debug(f'date {date} not found in trends_df. interpolating...')
 
             if use_lead_time:
                 logging.debug(f'interpolating data for date {date}')
@@ -335,6 +340,7 @@ def aggregate_polls(polls_df: pd.DataFrame,
                                 logging.debug(f'found data for \
                                               {(date-dt.timedelta(days=5)).strftime(format="%Y-%m-%d")}\
                                                minus new lead time.')
+                                break
                     else:
                         logging.debug(f'no data for {date}.\
                                       `lead_override` not allowed, so adding NaNs...')
@@ -355,6 +361,6 @@ def aggregate_polls(polls_df: pd.DataFrame,
 
     # sort by date
     out_df = out_df.sort_values(by='date').reset_index(drop=True)
-    logging.info(f'produced aggregate polls for {len(out_df)} days.')
+    logging.info(f'produced aggregations for {len(out_df)} days.')
 
     return out_df
