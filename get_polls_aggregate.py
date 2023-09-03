@@ -112,9 +112,9 @@ parser.add_argument(
 parser.add_argument(
     '-e',
     '--log_level',
-    dest='log_level',
+    choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
     default='info'
-    help='Log level for logging messages. "debug", "info", "warning" or "error".'
+    help='Log level for logging messages. "debug", "info", "warning", "error" or "critical".'
 )
 
 parser.add_argument(
