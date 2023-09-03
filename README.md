@@ -16,9 +16,9 @@ The core functionality (retrieving polling data, aggregating it, storing it into
     - When you're done, you can deactivate the virtual environment by running `deactivate` in your terminal.
 
 ### Install
-- Clone this repository 
+- Clone this repository (copy the URL from the green "Code" button above, then run `git clone <URL>` in your terminal in the location you want to clone the repo to)
 - Optional: create a virtual environment, activate the environment (see above)
-- Install the required packages by running `pip install -r requirements.txt` in your terminal from the repo's root directory
+- Install the required dependencies by running `pip install -r requirements.txt` in your terminal from the repo's root directory. 
 
 ### Running the code
 -  `get_polls_aggregate.py` runs without needing any arguments. You can run it with default arguments simply by typing `python get_polls_aggregate.py` - it will produce the output csvs `polls.csv` and `trends.csv` in the repo's root directory
@@ -64,3 +64,15 @@ options:
 - mypy for type checking
 
 ### Notes on design choices for this task
+In this section I will briefly explain some of the design choices I made for this task.
+- In line with the spec of the assignment, I tried to be as explicit as possible when it comes to documentation/explanation. In practice, this means that there are very verbose docstrings and comments in the code. I would usually comment considerably less, but I felt it was required for this task.
+- In essence, this task can be completed in 4 lines of code:
+```python
+polls_df = pd.read_html('https://cdn-dev.economistdatateam.com/jobs/pds/code-test/index.html')[0]
+trends_df = polls_df.drop(polls_df.columns[0:2], axis=1).resample('1d').mean().rolling(window=7, min_periods=1).mean()
+polls_df.to_csv('polls.csv')
+trends_df.to_csv('trends.csv')
+```
+However, I found that, following several attempts of investigating the intricacies of the `.resample` method, I was unable to replicate 1:1 the exact means or medians I achieved with the 'naive' (i.e. looping) method. Furthermore, I felt that such as submission would fail to demonstrate my ability to write clean, well-structured, well-documented code. As such, I decided to write my own aggregation function, which is a bit more verbose, but which I believe is more robust and intuitively understandable.
+- Rather than using a specific web scraping library, I'm relying on pandas' built in html reader function. For this task it proved sufficient, but for a more complex task I would probably use something like `BeautifulSoup`.
+- Though Python is dynamically typed, I believe strongly in the utility of type hints. This means that, especially for the `parse_from_to_date()` function in `poll_agg`, the function reads somewhat clunkily. This is in order for it to satisfy `mypy`, the type checker. I believe that the benefits of type checking outweigh the slight clunkiness of this minor section of the code.

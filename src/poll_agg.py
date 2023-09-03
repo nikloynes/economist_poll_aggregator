@@ -27,7 +27,7 @@
 import os
 import sys
 import logging
-from typing import Union, Literal
+from typing import Union, Literal, Tuple
 
 import pandas as pd
 import numpy as np
@@ -97,7 +97,7 @@ def filter_by_date(df: pd.DataFrame,
 
 def parse_from_to_date(df: pd.DataFrame,
                        from_date: dt.datetime | str | None = None,
-                       to_date: dt.datetime | str | None = None) -> (dt.datetime, dt.datetime):
+                       to_date: dt.datetime | str | None = None) -> Tuple[dt.datetime, dt.datetime]:
     '''
     supplying from_date and to_date as args is optional. 
     if they aren't supplied, we take the earliest and latest
@@ -114,7 +114,7 @@ def parse_from_to_date(df: pd.DataFrame,
         :from_date (dt.datetime): earliest date to retrieve data from
         :to_date (dt.datetime): latest date to retrieve data from
     '''
-    out = ()
+    out: Tuple[dt.datetime, dt.datetime] = (dt.datetime.min, dt.datetime.max)  # Default values
     for i, date_obj in enumerate([from_date, to_date]):
         if date_obj is None:
             if i==0:
@@ -125,8 +125,10 @@ def parse_from_to_date(df: pd.DataFrame,
             tmp_date = date_parser.parse(date_obj)
         elif isinstance(date_obj, dt.datetime):
             tmp_date = date_obj
+        else:
+            raise TypeError(f'from_date and to_date must be either None, str or dt.datetime.\
+                              {type(date_obj)} supplied.')
         out += (tmp_date,)
-
     return out
 
 
@@ -329,7 +331,7 @@ def aggregate_polls(polls_df: pd.DataFrame,
                             if len(subset_df)>0:
                                 found_data = True
                                 logging.debug(f'found data for \
-                                              {(date-dt.timedelta(days=5)).strftime(format="%Y-%m-%d")}\
+                                              {(date-dt.timedelta(days=5)).strftime("%Y-%m-%d")}\
                                                minus new lead time.')
                                 break
                     else:
