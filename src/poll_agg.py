@@ -65,7 +65,7 @@ TRENDS_DROP = ['pollster', 'n']
 # helpers
 def filter_by_date(df: pd.DataFrame,
                    from_date: dt.datetime | str | None = None,
-                   to_date: dt.datetime | str | None = None) -> (pd.DataFrame):
+                   to_date: dt.datetime | str | None = None) -> pd.DataFrame:
     '''
     helper function that allows us to subset a dataframe
     by a from_date and to_date. we re-use this quite a bit
@@ -123,8 +123,8 @@ def parse_from_to_date(df: pd.DataFrame,
                 tmp_date = df['date'].max()
         elif isinstance(date_obj, str):
             tmp_date = date_parser.parse(date_obj)
-        elif isinstance(from_date, dt.datetime):
-            tmp_date = from_date
+        elif isinstance(date_obj, dt.datetime):
+            tmp_date = date_obj
         out += (tmp_date,)
 
     return out
@@ -276,7 +276,7 @@ def aggregate_polls(polls_df: pd.DataFrame,
 
     # create a list of all dates between from_date & to_date
     # with increments of increment_days
-    dates = [from_date + dt.timedelta(days=x) for x in range(0, (to_date-from_date).days, increment_days)] 
+    dates = [from_date + dt.timedelta(days=x) for x in range(0, (to_date-from_date).days+1, increment_days)] 
 
     # some logging of core params of this run
     logging.info(f'n polls retrieved: {len(polls_df)}')
