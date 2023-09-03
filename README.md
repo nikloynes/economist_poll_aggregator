@@ -70,7 +70,7 @@ In this section I will briefly explain some of the design choices I made for thi
 if __name__ == '__main__':
     main()
 ``` 
-in future code. 
+    in future code. 
 - In line with the spec of the assignment, I tried to be as explicit as possible when it comes to documentation/explanation. In practice, this means that there are very verbose docstrings and comments in the code. I would usually comment considerably less, but I felt it was required for this task.
 - In essence, this task can be completed in 5 lines of code:
 ```python
