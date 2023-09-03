@@ -16,14 +16,10 @@ import sys
 import logging
 import argparse
 
-import pandas as pd
 import datetime as dt
-from dateutil import parser as date_parser
 
 import src.poll_agg as pa
 from src.utils import validate_date_format
-
-from urllib.error import URLError, HTTPError
 
 ############
 # CLI args
@@ -109,7 +105,7 @@ parser.add_argument(
     '-ll',
     '--log_level',
     choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-    default='DEBUG',
+    default='INFO',
     help='Log level for logging messages. "debug", "info", "warning", "error" or "critical".'
 )
 
@@ -142,7 +138,7 @@ else:
     handlers = [file_handler]
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=args.log_level,
     format=LOG_FORMAT,
     handlers=handlers)
 
