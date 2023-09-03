@@ -130,15 +130,6 @@ def parse_from_to_date(df: pd.DataFrame,
     return out
 
 
-# def create_date_range(df: pd.DataFrame,
-#                       from_date: dt.datetime | str | None = None,
-#                       to_date: dt.datetime | str | None = None) -> list[dt.datetime]:
-#     '''
-#     helper function that creates a list of all dates
-    
-#     '''
-
-
 # the protein
 def get_polls(url: str = POLLS_URL,
               from_date: dt.datetime | str | None = None,
