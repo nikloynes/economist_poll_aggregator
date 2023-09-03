@@ -1,7 +1,7 @@
 # economist_poll_aggregator
 My code for poll aggregator assignment for the Political Data Scientist role at The Economist (08/2023)
 
-Last updated: NL, 01/09/23
+Last updated: NL, 03/09/23
 
 The goal of this code is to provide a convenient and easy-to-use interface for the [Economist Political Data Scientist poll aggregation task](https://cdn-dev.economistdatateam.com/jobs/pds/code-test/assignment.html). The code is broadly structured into 2 core modules, `poll_agg.py` and `utils.py`, both of which live in `src/`. 
 
@@ -65,10 +65,17 @@ options:
 
 ### Notes on design choices for this task
 In this section I will briefly explain some of the design choices I made for this task.
+- Many Python coders like to write scripts where the main functionality is contained in a `main()` function, which is then called at the bottom of the script. I personally find this approach to be somewhat clunky, and prefer to write scripts where the main functionality is contained in the global scope. This is the approach I have taken here. I'm happy to include 
+```python
+if __name__ == '__main__':
+    main()
+``` 
+in future code. 
 - In line with the spec of the assignment, I tried to be as explicit as possible when it comes to documentation/explanation. In practice, this means that there are very verbose docstrings and comments in the code. I would usually comment considerably less, but I felt it was required for this task.
-- In essence, this task can be completed in 4 lines of code:
+- In essence, this task can be completed in 5 lines of code:
 ```python
 polls_df = pd.read_html('https://cdn-dev.economistdatateam.com/jobs/pds/code-test/index.html')[0]
+polls_df = 
 trends_df = polls_df.drop(polls_df.columns[0:2], axis=1).resample('1d').mean().rolling(window=7, min_periods=1).mean()
 polls_df.to_csv('polls.csv')
 trends_df.to_csv('trends.csv')
