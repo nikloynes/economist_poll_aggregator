@@ -23,6 +23,8 @@ from dateutil import parser as date_parser
 import src.poll_agg as pa
 from src.utils import validate_date_format
 
+from urllib.error import URLError, HTTPError
+
 ############
 # CLI args
 ############
@@ -34,7 +36,7 @@ parser.add_argument(
     '-fd', 
     '--from_date', 
     type=validate_date_format,
-    default = None, 
+    default=None, 
     help='Date from which to collect polls for. Format: YYYY-MM-DD.'
 )
 
@@ -42,7 +44,7 @@ parser.add_argument(
     '-td', 
     '--to_date', 
     type=validate_date_format,
-    default = None, 
+    default=None, 
     help='Date up to which (inclusive) to collect polls for. Format: YYYY-MM-DD')
 
 parser.add_argument(
@@ -80,7 +82,7 @@ parser.add_argument(
     '--interpolation',
     default='if_missing',
     help='When to interpolate data (i.e. use data from preceding days)\
-        "if_missing", "never" or "always".'
+         "if_missing", "never" or "always".'
 )
 
 parser.add_argument(
@@ -130,6 +132,7 @@ LOG_FORMAT = '%(asctime)s [%(filename)s:%(lineno)s - %(funcName)20s() ] - %(name
 # Logger
 if not os.path.exists('logs'):
     os.makedirs('logs')
+
 file_handler = logging.FileHandler(filename=args.log_file_path)
 stdout_handler = logging.StreamHandler(sys.stdout)
 
@@ -145,6 +148,8 @@ logging.basicConfig(
 
 logger = logging.getLogger('LOGGER')
 
+logging.info('Logger initialised.')
+logging.info(f'get_polls_aggregate.py...')
 logging.debug(f'from_date: {args.from_date}')
 logging.debug(f'to_date: {args.to_date}')
 logging.debug(f'agg_type: {args.agg_type}')
@@ -158,16 +163,36 @@ logging.debug(f'log_file_path: {args.log_file_path}')
 logging.debug(f'log_level: {args.log_level}')
 logging.debug(f'log_to_stdout: {args.log_to_stdout}')
 
-###########
-# PATHS & CONSTANTS
-###########
-FROM_DATE = args.from_date
-TO_DATE = args.to_date
-AGG_TYPE = args.agg_type
-CANDIDATES = args.candidates
-INCREMENT_DAYS = args.increment_days
-LEAD_TIME = args.lead_time
-INTERPOLATION = args.interpolation
-POLLS_OUTPATH = args.polls_outpath
-AGGS_OUTPATH = args.aggs_outpath
+############
+# THE THING!
+############
+# 1. get polls
+logging.info('Getting polls...')
+polls_df = pa.get_polls(from_date=args.from_date,
+                        to_date=args.to_date)
 
+logging.info('Retrieved polls.')
+logging.debug(f'polls_df shape: {polls_df.shape}')
+
+# 2. aggregate polls
+logging.info('Aggregating polls...')
+trends_df = pa.aggregate_polls(
+    polls_df=polls_df,
+    candidates=args.candidates,
+    agg_type=args.agg_type,
+    increment_days=args.increment_days,
+    lead_time=args.lead_time,
+    interpolation=args.interpolation,
+    from_date=args.from_date,
+    to_date=args.to_date
+)
+
+logging.info(f'Aggregated polls.')
+logging.debug(f'trends_df shape: {trends_df.shape}')
+
+# 3. write out
+logging.info('Writing out polls...')
+polls_df.to_csv(args.polls_outpath, index=False)
+logging.info('Wrote out polls.')
+
+trends_df.to_csv(args.aggs_outpath, index=False)

@@ -160,7 +160,5 @@ cython_debug/
 #.idea/
 
 # NL additions
-log/
 logs/
-log_files/
-logfiles/
+*.csv
