@@ -74,12 +74,10 @@ In this section I will briefly explain some of the design choices I made for thi
     polls_df = polls_df.set_index('date').drop(['Date', 'Pollster', 'Sample'], axis=1)
     for col in candidate_cols:
         polls_df[col] = polls_df[col].apply(ut.remove_non_numeric)
-    trends_df = polls_df.drop(polls_df.columns[0:2], axis=1).resample('1d').mean().rolling(window=7, min_periods=1).mean()
+    trends_df = polls_df.resample('1d').mean().rolling(window=7, min_periods=1).mean()
     polls_df.to_csv('polls.csv')
     trends_df.to_csv('trends.csv')
     ```  
-    However, I found that, following several attempts of investigating the intricacies of the `.resample` method, I was unable to replicate 1:1 the exact means or medians I achieved with the 'naive' (i.e. looping) method.   
-    Furthermore, I felt that such as submission would fail to demonstrate my ability to write clean, modularised, well-structured, well-documented code. As such, I decided to write my own aggregation function, which is a bit more verbose, but which I believe is more robust and intuitively understandable.   
-    Plus, obviously, we still need to deal with %-symbols, and other quirks in messy data (which would only get worse in the real world). This is best done with properly modularised code which is robust to edge cases and logs errors easily. 
+    However, I found that, following several attempts of investigating the intricacies of the `.resample` method, I was unable to replicate 1:1 the exact means or medians I achieved with the 'naive' (i.e. looping) method. Furthermore, I felt that such as submission would fail to demonstrate my ability to write clean, modularised, well-structured, well-documented code. As such, I decided to write my own aggregation function, which is a bit more verbose, but which I believe is more robust and intuitively understandable. Plus, obviously, we still need to deal with %-symbols, and other quirks in messy data (which would only get worse in the real world). This is best done with properly modularised code which is robust to edge cases and logs errors easily. 
 - Rather than using a specific web scraping library, I'm relying on pandas' built in html reader function. For this task it proved sufficient, but for a more complex task I would probably use something like `BeautifulSoup`.
 - Though Python is dynamically typed, I believe strongly in the utility of type hints. This means that, especially for the `parse_from_to_date()` function in `poll_agg`, the function reads somewhat clunkily. This is in order for it to satisfy `mypy`, the type checker. I believe that the benefits of type checking outweigh the slight clunkiness of this minor section of the code.
