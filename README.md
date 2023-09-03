@@ -67,19 +67,19 @@ options:
 In this section I will briefly explain some of the design choices I made for this task.
 - Many Python coders like to write scripts where the main functionality is contained in a `main()` function, which is then called at the bottom of the script. I personally don't like this approach and prefer to write scripts where the main functionality is contained in the global scope. This is the approach I have taken here. I'm happy to include an `if __name__ == '__main__'` block in future code.
 - In line with the spec of the assignment, I tried to be as explicit as possible when it comes to documentation/explanation. In practice, this means that there are very verbose docstrings and comments in the code. I would usually comment considerably less, but I felt it was required for this task.
-- In essence, this task can be completed in a few lines of code (cheating a bit, as we need our own `remove_non_numeric` function):  
-```python
-polls_df = pd.read_html('https://cdn-dev.economistdatateam.com/jobs/pds/code-test/index.html')[0]
-polls_df['date'] = pd.to_datetime(polls_df['Date'], format='%m/%d/%y')
-polls_df = polls_df.set_index('date').drop(['Date', 'Pollster', 'Sample'], axis=1)
-for col in candidate_cols:
-    polls_df[col] = polls_df[col].apply(ut.remove_non_numeric)
-trends_df = polls_df.drop(polls_df.columns[0:2], axis=1).resample('1d').mean().rolling(window=7, min_periods=1).mean()
-polls_df.to_csv('polls.csv')
-trends_df.to_csv('trends.csv')
-```  
-However, I found that, following several attempts of investigating the intricacies of the `.resample` method, I was unable to replicate 1:1 the exact means or medians I achieved with the 'naive' (i.e. looping) method.   
-Furthermore, I felt that such as submission would fail to demonstrate my ability to write clean, modularised, well-structured, well-documented code. As such, I decided to write my own aggregation function, which is a bit more verbose, but which I believe is more robust and intuitively understandable.   
-Plus, obviously, we still need to deal with %-symbols, and other quirks in messy data (which would only get worse in the real world). This is best done with properly modularised code which is robust to edge cases and logs errors easily. 
+- In essence, this task can be completed in a few lines of code (cheating a bit, as we need our own `remove_non_numeric` function):    
+    ```python
+    polls_df = pd.read_html('https://cdn-dev.economistdatateam.com/jobs/pds/code-test/index.html')[0]
+    polls_df['date'] = pd.to_datetime(polls_df['Date'], format='%m/%d/%y')
+    polls_df = polls_df.set_index('date').drop(['Date', 'Pollster', 'Sample'], axis=1)
+    for col in candidate_cols:
+        polls_df[col] = polls_df[col].apply(ut.remove_non_numeric)
+    trends_df = polls_df.drop(polls_df.columns[0:2], axis=1).resample('1d').mean().rolling(window=7, min_periods=1).mean()
+    polls_df.to_csv('polls.csv')
+    trends_df.to_csv('trends.csv')
+    ```  
+    However, I found that, following several attempts of investigating the intricacies of the `.resample` method, I was unable to replicate 1:1 the exact means or medians I achieved with the 'naive' (i.e. looping) method.   
+    Furthermore, I felt that such as submission would fail to demonstrate my ability to write clean, modularised, well-structured, well-documented code. As such, I decided to write my own aggregation function, which is a bit more verbose, but which I believe is more robust and intuitively understandable.   
+    Plus, obviously, we still need to deal with %-symbols, and other quirks in messy data (which would only get worse in the real world). This is best done with properly modularised code which is robust to edge cases and logs errors easily. 
 - Rather than using a specific web scraping library, I'm relying on pandas' built in html reader function. For this task it proved sufficient, but for a more complex task I would probably use something like `BeautifulSoup`.
 - Though Python is dynamically typed, I believe strongly in the utility of type hints. This means that, especially for the `parse_from_to_date()` function in `poll_agg`, the function reads somewhat clunkily. This is in order for it to satisfy `mypy`, the type checker. I believe that the benefits of type checking outweigh the slight clunkiness of this minor section of the code.
