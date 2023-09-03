@@ -161,5 +161,6 @@ cython_debug/
 
 # NL additions
 log/
+logs/
 log_files/
 logfiles/

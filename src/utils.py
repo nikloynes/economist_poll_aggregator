@@ -9,13 +9,16 @@
 # USAGE: import utils as ut
 
 # NL, 22/08/23
-# NL, 29/08/23 -- deprecating dotenv-related funcs
+# NL, 29/08/23 -- deprecating dotenv-related funcs  
+# NL, 03/09/23 -- adding validate_date_format
 
 ############
 # IMPORTS 
 ############
 import os
 import logging
+import re
+from argparse import ArgumentTypeError
 
 ###########
 # EXCEPTIONS
@@ -28,7 +31,6 @@ class EnvVarNotFoundError(Exception):
 ###########
 # set up logger
 logger = logging.getLogger('utils')
-
 
 ############
 # FUNCTIONS 
@@ -72,7 +74,7 @@ def remove_percentage_symbol(value):
     return value
 
 
-def remove_non_numeric(value):
+def remove_non_numeric(value: str) -> str:
     '''
     removes non-numeric characters from a string,
     but retaining '.' characters. 
@@ -84,9 +86,30 @@ def remove_non_numeric(value):
         value (str): value with non-numeric characters removed
     '''
     if isinstance(value, str):
+        logging.debug(f'Removing non-numeric characters from {value}')
         return ''.join(filter(lambda c: c.isdigit() or c == '.', value))
     
+    logging.warning(f'Value {value} is not a string. Returning as is.')
     return value
 
 
+def validate_date_format(date_str: str) -> str:
+    '''
+    when user passes a date to the CLI, we want to validate
+    that the format is YYYY-MM-DD . 
+    while the dateutil parser will throw an error if it can't parse, 
+    it will be easier to throw an error sooner.
+
+    args:
+        date_str (str): date string to validate
+    
+    returns:
+        date_str (str): date string if valid
+    '''
+    date_format = r'\d{4}-\d{2}-\d{2}'  # YYYY-MM-DD
+
+    if re.match(date_format, date_str):
+        return date_str
+    else:
+        raise ArgumentTypeError(f'Invalid date format. Please use YYYY-MM-DD.')
 
