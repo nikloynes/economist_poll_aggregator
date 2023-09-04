@@ -73,6 +73,7 @@ The core functionality (retrieving polling data, aggregating it, storing it into
 ### Notes on design choices for this task
 In this section I will briefly explain some of the design choices I made for this task.
 - Many Python coders like to write scripts where the main functionality is contained in a `main()` function, which is then called at the bottom of the script. I personally don't like this approach and prefer to write scripts where the main functionality is contained in the global scope. This is the approach I have taken here. 
+- There is an argument against hard-coding constants (such as the URL for the polling data, out-paths) into the main code module. In production, you'd want some kind of config file or environment variables system for storing this info (especially once you move towards a database, API keys, etc.). However, I initially started this project with that appraoch, and it seemed completely overkill. For now, I decided I was fine with hard-coding 3 constants into the main module.
 - In line with the spec of the assignment, I tried to be as explicit as possible when it comes to documentation/explanation. In practice, this means that there are verbose docstrings and comments in the code. I would usually comment considerably less, but I felt it was required for this task.
 - In essence, this task can be completed in a few lines of code (cheating a bit, as we need our own `remove_non_numeric` function):    
     ```python
