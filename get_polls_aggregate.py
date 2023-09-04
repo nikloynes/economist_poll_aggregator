@@ -63,6 +63,7 @@ parser.add_argument(
     '-id',
     '--increment_days',
     default=1,
+    type=int,
     help='The increment of days to produce aggregations for.'
 )
 
@@ -70,12 +71,14 @@ parser.add_argument(
     '-le',
     '--lead_time',
     default=1,
+    type=int,
     help='Lead time (number of days) to incorporate in averages'
 )
 
 parser.add_argument(
     '-i',
     '--interpolation',
+    choices=['if_missing', 'never', 'always'],
     default='if_missing',
     help='When to interpolate data (i.e. use data from preceding days)\
          "if_missing", "never" or "always".'
