@@ -161,4 +161,5 @@ cython_debug/
 
 # NL additions
 logs/
-*.csv
+polls.csv
+trends.csv
