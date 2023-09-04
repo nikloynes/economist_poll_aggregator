@@ -97,7 +97,7 @@ def filter_by_date(df: pd.DataFrame,
 
 def parse_from_to_date(df: pd.DataFrame,
                        from_date: dt.datetime | str | None = None,
-                       to_date: dt.datetime | str | None = None) -> Tuple[dt.datetime, dt.datetime]:
+                       to_date: dt.datetime | str | None = None) -> (dt.datetime, dt.datetime):
     '''
     supplying from_date and to_date as args is optional. 
     if they aren't supplied, we take the earliest and latest
@@ -114,7 +114,7 @@ def parse_from_to_date(df: pd.DataFrame,
         :from_date (dt.datetime): earliest date to retrieve data from
         :to_date (dt.datetime): latest date to retrieve data from
     '''
-    out: Tuple[dt.datetime, dt.datetime] = (dt.datetime.min, dt.datetime.max)  # Default values
+    out = () 
     for i, date_obj in enumerate([from_date, to_date]):
         if date_obj is None:
             if i==0:
@@ -195,6 +195,80 @@ def get_polls(url: str = POLLS_URL,
     return polls_df
 
 
+def validate_candidates(polls_df: pd.DataFrame,
+                        candidates: list | str = 'all') -> list[str]:
+    '''
+    validates the input of candidates provided by user, 
+    for use in the the aggregate_polls() function.
+    '''
+    if candidates == 'all':
+        candidates = [col for col in polls_df.columns if col not in BASE_COLS]
+
+    if isinstance(candidates, str):
+        candidates = [candidates]
+
+    for candidate in candidates:
+        if not isinstance(candidate, str) or candidate not in polls_df.columns:
+            raise ValueError(f'Invalid candidate: {candidate}')
+    return candidates
+
+
+def aggregate_with_lead_time(polls_df: pd.DataFrame,
+                             date: dt.datetime,
+                             lead_time: int = 7,
+                             lead_override: bool = True,
+                             agg_type: Literal['mean', 'median'] = 'mean',
+                             candidates: list[str] | str = 'all',
+                             throw_error: bool = False) -> pd.DataFrame:
+    '''
+    Assuming we want to interpolate, this function produces
+    interpolated aggregation for 1 day. It returns a 1-line dataframe.
+    By default, it returns NAs if there's either an empty polls_df
+    originally supplied, or if lead_override is False and there's no
+    data within the lead_time. This can be changed by setting throw_error
+    to True. 
+
+    args:
+        :polls_df (pd.DataFrame): dataframe of polls
+        :date (dt.datetime): date to aggregate polls for
+        :lead_time (int): number of days before target day to include in an average
+            when aggregating polls
+        :lead_override (bool): whether to increase lead_time if there is no data
+        :agg_type (str): type of aggregation to use, either 'mean' or 'median'
+        :candidates (list[str] or str): list of candidates to
+            aggregate polls for, or 'all' for all candidates.
+            these must be column names in the polls df.
+        :throw_error (bool): whether to throw an error if there's no data
+            at all. defaults to False.
+    '''
+    logging.debug(f'Aggregating data with interpolation for date {date}')
+
+    if candidates=='all':
+        candidates = [col for col in polls_df.columns if col not in BASE_COLS]
+
+    subset_df = polls_df[(polls_df['date'] <= date) & (polls_df['date'] >= (date - dt.timedelta(days=lead_time)))]
+
+    if len(polls_df)==0 or (len(subset_df)==0 and not lead_override):
+        logging.debug(f'No polling data. Returning NaNs.')
+        if throw_error:
+            raise ValueError(f'No polling data for {date}.')
+        return pd.DataFrame({'date': date, **{candidate: np.nan for candidate in candidates}}, index=[0])
+
+    while len(subset_df)==0 and lead_override:
+        lead_time += 1
+        logging.debug(f'New lead time: {lead_time}')
+        subset_df = polls_df[(polls_df['date'] <= date) & (polls_df['date'] >= (date - dt.timedelta(days=lead_time)))]    
+    
+    # Produce aggregations for each column that isn't `date`
+    if agg_type == 'mean':
+        aggregation_df = subset_df.mean().to_frame().T
+    elif agg_type == 'median':
+        aggregation_df = subset_df.median().to_frame().T
+    aggregation_df['date'] = date
+
+    return aggregation_df
+
+
 def aggregate_polls(polls_df: pd.DataFrame,
                     candidates: list[str] | str = 'all',
                     agg_type: Literal['mean', 'median'] = 'mean',
@@ -243,23 +317,10 @@ def aggregate_polls(polls_df: pd.DataFrame,
     if agg_type not in ['mean', 'median']:
         raise ValueError('agg_type must be one of "mean" or "median"')
 
-    # ensure we have the right columns in polls_df
-    if candidates!='all':
-        if isinstance(candidates, str):
-            candidates = [candidates]
+    # validate candidates, subset polls_df
+    candidates = validate_candidates(polls_df, candidates)
+    polls_df = polls_df[BASE_COLS + candidates]
 
-        for candidate in candidates:
-            if not isinstance(candidate, str):
-                raise TypeError('candidates must be a list of strings')
-            
-            if candidate not in polls_df.columns:
-                raise ValueError(f'candidate {candidate} not found in polls_df columns')
-        
-        polls_df = polls_df[BASE_COLS + candidates]
-    else:
-        # we will explicitly name our candidates for later use
-        candidates = [col for col in polls_df.columns if col not in BASE_COLS]
-    
     # remove redundant columns
     polls_df = polls_df.drop(columns=TRENDS_DROP)
 
@@ -283,8 +344,6 @@ def aggregate_polls(polls_df: pd.DataFrame,
 
     # start by aggregating data
     trends_df = polls_df.groupby('date').agg(agg_type).reset_index()
-    # potentially:
-    # polls_EDIT_df.resample("1d").mean().rolling(window=2, min_periods=1).mean()
     
     if interpolation=='never':
         logging.debug(f'not interpolating data. finished aggregating polls.')
@@ -294,6 +353,7 @@ def aggregate_polls(polls_df: pd.DataFrame,
         out_df = pd.DataFrame()
         for date in dates:
             logging.debug(f'processing date: {date}')
+
             if date in trends_df['date'].values:
                 if interpolation=='if_missing':
                     # copy data from trends_df to out_df
@@ -310,46 +370,15 @@ def aggregate_polls(polls_df: pd.DataFrame,
 
             if use_lead_time:
                 logging.debug(f'interpolating data for date {date}')
-
-                subset_df = polls_df[polls_df['date']<=date]
-                subset_df = subset_df[subset_df['date']>=(date-dt.timedelta(days=lead_time))]
-
-                # potential problem - if we have no data, 
-                # we need to expand our lead_time
-                if len(subset_df)==0:
-                    if lead_override:
-                        logging.debug(f'no data for {date} minus lead time. \
-                                      `lead_override` allowed, so expanding lead time...')
-                        found_data = False
-                        new_lead_time = lead_time
-                        while not found_data:
-                            new_lead_time += 1
-                            logging.debug(f'new lead time: {new_lead_time}')
-
-                            subset_df = polls_df[polls_df['date']<=date]
-                            subset_df = subset_df[subset_df['date']>=(date-dt.timedelta(days=new_lead_time))]
-                            if len(subset_df)>0:
-                                found_data = True
-                                logging.debug(f'found data for \
-                                              {(date-dt.timedelta(days=5)).strftime("%Y-%m-%d")}\
-                                               minus new lead time.')
-                                break
-                    else:
-                        logging.debug(f'no data for {date}.\
-                                      `lead_override` not allowed, so adding NaNs...')
-                        # add NaNs for all candidates
-                        newline = {'date': date, **{candidate: np.nan for candidate in candidates}}
-                        out_df = pd.concat([out_df, pd.DataFrame(newline, index=[0])], ignore_index=True)
-                        continue
+                newline_df = aggregate_with_lead_time(
+                    polls_df=polls_df, 
+                    date=date,
+                    lead_time=lead_time,
+                    lead_override=lead_override,
+                    agg_type=agg_type,
+                    candidates=candidates,
+                    throw_error=False) 
                 
-                # produce aggregations for each column that isn't `date`
-                if agg_type=='mean':
-                    newline_df = subset_df.mean().to_frame().T
-                elif agg_type=='median':
-                    newline_df = subset_df.median().to_frame().T
-                newline_df['date'] = date
-
-                # append to out_df
                 out_df = pd.concat([out_df, newline_df], ignore_index=True)
 
     # sort by date
