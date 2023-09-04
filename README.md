@@ -1,14 +1,14 @@
 # economist_poll_aggregator
-My code for poll aggregator assignment for the Political Data Scientist role at The Economist (08/2023)
+Code for the *poll aggregator* assignment for the Political Data Scientist role at The Economist
 
 Last updated: NL, 04/09/23
 _______________________________
 
-The goal of this code is to provide a convenient and easy-to-use interface for the [Economist Political Data Scientist poll aggregation task](https://cdn-dev.economistdatateam.com/jobs/pds/code-test/assignment.html). The code is structured into 2 core modules, `poll_agg.py` and `utils.py`, both of which live in `src/`. 
+The goal of this code is to provide a convenient and easy-to-use interface for the [Economist Political Data Scientist poll aggregation task](https://cdn-dev.economistdatateam.com/jobs/pds/code-test/assignment.html). The code is divided into 2 modules, `poll_agg.py` and `utils.py`, both of which live in `src/`. 
 
-The core functionality (retrieving polling data, aggregating it, storing it into csvs) is easily run through the script `get_polls_aggregate.py`. You can customise the behaviour of this script, and also run the underlying functions in an interactive session with heavy customisability (run `ipython` or `python` from the root directory of the repo and then `import src.poll_agg as pa`). 
+The core functionality (retrieving polling data, aggregating it, storing it into csvs) is containde in the script `get_polls_aggregate.py`. You can customise the behaviour of this script using arguments, and also run the underlying functions interactively (run `ipython` or `python` from the root directory of the repo and then `import src.poll_agg as pa`). 
 
-I extensively tested this code on MacOS 12.4, Ubuntu 22.04 and Windows 10, using various Python versions from 3.10 through to 3.11.5. If you face any problems, I recommend trying with 3.11.5 in a virtualenv. 
+I extensively tested this code on MacOS 12.4, Ubuntu 22.04 and Windows 10, using various Python versions from 3.10 through 3.11.5. If you face any problems, I recommend trying 3.11.5 in a `venv`. 
 
 ### Prerequesites
 - This program was written in Python 3.11.5. You will need to make sure you have **Python 3.10** (or higher) installed on your machine for it to work. If you don't have Python installed, you can download it [here](https://www.python.org/downloads/).
@@ -20,18 +20,18 @@ I extensively tested this code on MacOS 12.4, Ubuntu 22.04 and Windows 10, using
 
 ### Install
 - Clone this repository (copy the URL from the green "Code" button above, then run `git clone <URL>` in your terminal in the location you want to clone the repo to)
-- Optional: create a virtual environment, activate the environment (see above)
+- Optional: create a virtual environment in the repo's root dir, activate the environment (see above)
 - Install the required dependencies by running `pip install -r requirements.txt` in your terminal from the repo's root directory. 
 
 ### Running the code
-- `get_polls_aggregate.py` runs without needing any arguments. You can run it with default arguments simply by typing `python get_polls_aggregate.py` - it will produce the output csvs `polls.csv` and `trends.csv` in the repo's root directory
+- `get_polls_aggregate.py` doesn't need any arguments. You can run it in default configurations by typing `python get_polls_aggregate.py` in the repo's root dir - it will produce the output csvs `polls.csv` and `trends.csv` there.
 - You can customise the behaviour of the script by passing in arguments. You can see the available arguments by running `python get_polls_aggregate.py --help` in your terminal. These are the options available to you: 
     ```
     usage: get_polls_aggregate.py [-h] [-fd FROM_DATE] [-td TO_DATE] [-at {mean,median}] [-c [CANDIDATES ...]]
                                 [-id INCREMENT_DAYS] [-le LEAD_TIME] [-i INTERPOLATION] [-po POLLS_OUTPATH]
                                 [-ao AGGS_OUTPATH] [-lo LOG_FILE_PATH] [-ll {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-l]
 
-    Args for running poll downloader & aggregator.
+    Args for running poll downloader & aggregator. 
 
     options:
     -h, --help            show this help message and exit
@@ -59,6 +59,7 @@ I extensively tested this code on MacOS 12.4, Ubuntu 22.04 and Windows 10, using
                             Log level for logging messages. "debug", "info", "warning", "error" or "critical".
     -l, --log_to_stdout   Print logging messages to stdout (as well as file)
     ``` 
+- to see the default arguments (i.e. what happens if you run the script without passing in any arguments), simply have a look at the code.
 - `get_polls_aggregate.py` produces a logfile every time it's run. by default, this will be stored in `logs/` in the repo's root directory. You can customise the filepath by passing in the `-lo` or `--log_file_path` argument. 
 - the default logging level is `INFO`. You can customise this by passing in the `-ll` or `--log_level` argument. If you are experiencing issues/bugs with the script, you can try setting the logging level to `DEBUG` to get more information about what's going on, and where the script is failing.
 
