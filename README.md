@@ -59,7 +59,8 @@ I extensively tested this code on MacOS 12.4, Ubuntu 22.04 and Windows 10, using
                             Log level for logging messages. "debug", "info", "warning", "error" or "critical".
     -l, --log_to_stdout   Print logging messages to stdout (as well as file)
     ``` 
-- to see the default arguments (i.e. what happens if you run the script without passing in any arguments), simply have a look at the code.
+- by default, the script will collect polls (and make aggregations) for **all candidates**, in `time_increment`s of **1 day**, with a `lead_time` of **3 days**, but lead_time only applying if polling data `is_missing` for a given date. It will exceed that `lead_time` if no data is available at all (`lead_override`). It will produce **means**. 
+- The `lead_time` of 3 days and `lead_override==True` do **not** mean that there will always be data for a given candidate. Instead it means that there will be polling data for a given date. If you want there to always be data for a given candidate, you should produce aggregations just for individual candidates, loop over the candidates, and set `lead_override` to `True`. This way you will end up with very few NaNs in your data, but a lot of imprecise means. 
 - `get_polls_aggregate.py` produces a logfile every time it's run. by default, this will be stored in `logs/` in the repo's root directory. You can customise the filepath by passing in the `-lo` or `--log_file_path` argument. 
 - the default logging level is `INFO`. You can customise this by passing in the `-ll` or `--log_level` argument. If you are experiencing issues/bugs with the script, you can try setting the logging level to `DEBUG` to get more information about what's going on, and where the script is failing.
 
@@ -71,7 +72,7 @@ I extensively tested this code on MacOS 12.4, Ubuntu 22.04 and Windows 10, using
     ``` 
     all tests should pass just fine.
 - For this purpose, `pytest` and `pytest-mock` are also part of the `requirements.txt` file. 
-- Optional: Given that I aim to writew strictly typed python code, you may also want to install `mypy` and run `mypy src/poll_agg.py` to check that the code is type-safe. Unfortunately, there are still a few errors that come up here, all associated with the `filter_by_date()` function. this is due to mypy preferring very cumbersome definitions of `Tuple[]` - which I chose not to do for this function as it did not read well at all, and ended up not functioning at all. All other code is type-safe. 
+- Optional: Given that I aim to write strictly typed python code, you may also want to install `mypy` and run `mypy src/poll_agg.py` to check that the code is type-safe. Unfortunately, there are still a few errors that come up here, all associated with the `filter_by_date()` function. this is due to mypy preferring very cumbersome definitions of `Tuple[]` - which I chose not to do for this function as it did not read well at all, and ended up not functioning at all. All other code is type-safe. 
 
 ### Notes on design choices for this task
 In this section I will briefly explain some of the design choices I made for this task.

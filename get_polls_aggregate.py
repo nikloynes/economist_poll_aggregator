@@ -70,7 +70,7 @@ parser.add_argument(
 parser.add_argument(
     '-le',
     '--lead_time',
-    default=1,
+    default=3,
     type=int,
     help='Lead time (number of days) to incorporate in averages'
 )
