@@ -6,7 +6,7 @@ _______________________________
 
 The goal of this code is to provide a convenient and easy-to-use interface for the [Economist Political Data Scientist poll aggregation task](https://cdn-dev.economistdatateam.com/jobs/pds/code-test/assignment.html). The code is structured into 2 core modules, `poll_agg.py` and `utils.py`, both of which live in `src/`. 
 
-The core functionality (retrieving polling data, aggregating it, storing it into csvs) is easily run through the script `get_polls_aggregate.py`. You can customise the behaviour of this script, and also run the underlying functions in an interactive session with heavy customisability. Run `ipython` or `python` from the root directory of the repo and then `import src.poll_agg as pa`. 
+The core functionality (retrieving polling data, aggregating it, storing it into csvs) is easily run through the script `get_polls_aggregate.py`. You can customise the behaviour of this script, and also run the underlying functions in an interactive session with heavy customisability (run `ipython` or `python` from the root directory of the repo and then `import src.poll_agg as pa`). 
 
 I extensively tested this code on MacOS 12.4, Ubuntu 22.04 and Windows 10, using various Python versions from 3.10 through to 3.11.5. If you face any problems, I recommend trying with 3.11.5 in a virtualenv. 
 
