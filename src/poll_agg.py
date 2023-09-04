@@ -44,7 +44,7 @@ from . import utils as ut
 # INIT
 ###########
 # set up logger
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging.getLogger('poll_agg')
 
 ###########
 # PATHS & CONSTANTS
