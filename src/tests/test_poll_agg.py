@@ -6,9 +6,6 @@
 
 # this file contains a range of tests for the poll_agg module.
 
-# default values for function arguments are defined as
-# constants at the top of the file. these can be however be changed.
-
 # USAGE: pytest test_poll_agg.py
 
 # NL, 04/09/23

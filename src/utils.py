@@ -19,6 +19,7 @@ import os
 import logging
 import re
 from argparse import ArgumentTypeError
+from typing import Any
 
 ###########
 # EXCEPTIONS
@@ -55,7 +56,7 @@ def load_env_var(env_var: str):
     return var
 
 
-def remove_percentage_symbol(value):
+def remove_percentage_symbol(value: Any) -> Any:
     '''
     removes a percentage symbol from a string. 
     this function is useful as, when iterating over a
