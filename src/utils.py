@@ -90,7 +90,7 @@ def remove_non_numeric(value: str) -> str:
         logging.debug(f'Removing non-numeric characters from {value}')
         return ''.join(filter(lambda c: c.isdigit() or c == '.', value))
     
-    logging.warning(f'Value {value} is not a string. Returning as is.')
+    logging.debug(f'Value {value} is not a string. Returning as is.')
     return value
 
 
