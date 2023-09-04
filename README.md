@@ -60,8 +60,14 @@ options:
 - the default logging level is `INFO`. You can customise this by passing in the `-ll` or `--log_level` argument. If you are experiencing issues/bugs with the script, you can try setting the logging level to `DEBUG` to get more information about what's going on.
 
 ### Running tests
-- regular tests script
-- mypy for type checking
+- I implemented a range of tests for all the functions contained in `poll_agg.py` and `utils.py`. They all use the pytest framework. In order to run the tests, simply run 
+    ```bash
+    pytest src/tests/test_poll_agg.py
+    pytest src/tests/test_utils.py
+    ``` 
+    this should run just fine.
+- For this purpose, pytest and pytest-mock are also part of the requirements.txt file. 
+- Optional: Given that I aim to write fairly strictly typed python code, you may also want to install `mypy` and run `mypy src/poll_agg.py` to check that the code is type-safe. Unfortunately, there are still a few errors that come up here, all associated with the `filter_by_date()` function. this is due to mypy preferring very cumbersome definitions of `Tuple[]` - which I chose not to do for this function as it did not read well at all, and ended up not functioning at all. All other code is type-safe. 
 
 ### Notes on design choices for this task
 In this section I will briefly explain some of the design choices I made for this task.
