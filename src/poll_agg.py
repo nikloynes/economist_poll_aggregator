@@ -34,7 +34,7 @@ import numpy as np
 import datetime as dt
 from dateutil import parser as date_parser
 
-from . import utils as ut
+import utils as ut
 
 ###########
 # EXCEPTIONS

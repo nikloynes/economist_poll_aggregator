@@ -16,6 +16,7 @@
 ###########
 # IMPORTS
 ###########
+import sys
 import pytest
 import logging
 import datetime as dt
@@ -25,7 +26,10 @@ import pandas as pd
 import numpy as np
 from pandas.testing import assert_frame_equal
 
-from . import poll_agg as pa
+SCRIPT_DIR = sys.path[0] # so that we can run pytest from root dir
+sys.path.insert(0, SCRIPT_DIR+'/../')
+
+import poll_agg as pa
 
 ###########
 # INIT
@@ -36,8 +40,8 @@ logger = logging.getLogger('poll_agg_tests')
 ###########
 # PATHS & CONSTANTS
 ###########
-GOOD_POLLS = 'example_data/good_polls.csv'
-EMPTY_POLLS = 'example_data/empty_polls.csv'
+GOOD_POLLS = SCRIPT_DIR+'/example_data/good_polls.csv'
+EMPTY_POLLS = SCRIPT_DIR+'/example_data/empty_polls.csv'
 BAD_DATE_STR = 'ekasdnjsr42'
 WRONG_DATE_FMT = 23.04
 

@@ -1,7 +1,7 @@
 # economist_poll_aggregator
 My code for poll aggregator assignment for the Political Data Scientist role at The Economist (08/2023)
 
-Last updated: NL, 03/09/23
+Last updated: NL, 04/09/23
 
 The goal of this code is to provide a convenient and easy-to-use interface for the [Economist Political Data Scientist poll aggregation task](https://cdn-dev.economistdatateam.com/jobs/pds/code-test/assignment.html). The code is broadly structured into 2 core modules, `poll_agg.py` and `utils.py`, both of which live in `src/`. 
 
