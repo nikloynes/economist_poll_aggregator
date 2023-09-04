@@ -8,6 +8,8 @@ The goal of this code is to provide a convenient and easy-to-use interface for t
 
 The core functionality (retrieving polling data, aggregating it, storing it into csvs) is easily run through the script `get_polls_aggregate.py`. You can customise the behaviour of this script, and also run the underlying functions in an interactive session with heavy customisability.
 
+I extensively tested this code on MacOS 12.4, Ubuntu 22.04 and Windows 10, using various Python versions from 3.10 through to 3.11.5. If you face any problems, I recommend trying with 3.11.5 in a virtualenv. 
+
 ### Prerequesites
 - This program was written in Python 3.11.5. You will need to make sure you have **Python 3.10** (or higher) installed on your machine for it to work. If you don't have Python installed, you can download it [here](https://www.python.org/downloads/).
 - You don't *need* to do this, but it's advisable to run the code in a **virtual environment**: 
