@@ -26,17 +26,19 @@
 ############
 # IMPORTS 
 ############
-import os
 import sys
 import logging
-from typing import Union, Literal, Tuple
+from typing import Literal
 
 import pandas as pd
 import numpy as np
 import datetime as dt
 from dateutil import parser as date_parser
 
-from . import utils as ut
+MODULE_DIR = sys.path[0] # so that we can run pytest from root dir
+sys.path.insert(0, MODULE_DIR+'/../')
+
+import src.utils as ut
 
 ###########
 # EXCEPTIONS
