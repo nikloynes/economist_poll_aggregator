@@ -19,6 +19,8 @@
 #                 type checking in favour of mypy
 # NL, 01/09/23 -- ironing out quirks with out-of-bounds date 
 #                 subsetting / interpolation
+# NL, 04/09/23 -- cleaning up, refactoring (breaking up big functions),
+#                 making compatible with mypy (mostly) and pytest
 
 
 ############
