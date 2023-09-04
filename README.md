@@ -66,8 +66,8 @@ options:
     pytest src/tests/test_utils.py
     ``` 
     this should run just fine.
-- For this purpose, pytest and pytest-mock are also part of the requirements.txt file. 
-- Optional: Given that I aim to write fairly strictly typed python code, you may also want to install `mypy` and run `mypy src/poll_agg.py` to check that the code is type-safe. Unfortunately, there are still a few errors that come up here, all associated with the `filter_by_date()` function. this is due to mypy preferring very cumbersome definitions of `Tuple[]` - which I chose not to do for this function as it did not read well at all, and ended up not functioning at all. All other code is type-safe. 
+- For this purpose, `pytest` and `pytest-mock` are also part of the `requirements.txt` file. 
+- Optional: Given that I aim to writew strictly typed python code, you may also want to install `mypy` and run `mypy src/poll_agg.py` to check that the code is type-safe. Unfortunately, there are still a few errors that come up here, all associated with the `filter_by_date()` function. this is due to mypy preferring very cumbersome definitions of `Tuple[]` - which I chose not to do for this function as it did not read well at all, and ended up not functioning at all. All other code is type-safe. 
 
 ### Notes on design choices for this task
 In this section I will briefly explain some of the design choices I made for this task.
